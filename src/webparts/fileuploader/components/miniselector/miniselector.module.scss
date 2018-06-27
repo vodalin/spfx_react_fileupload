@@ -1,0 +1,34 @@
+@import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
+
+.minselect{
+  .restricted_div{
+    //position: absolute;
+    //visibility: inherit;
+    //border: 0px;
+    top: 33px;
+    background-color: transparent;
+    //left: 401px;
+    direction: ltr;
+    //min-width: 134px;
+    max-width: 135px;
+    width: auto;
+    height: 29px;
+  }
+  .hidden{
+    display: none;
+  }
+  .revealed {
+    background-color: yellowgreen;
+    max-width: 200px;
+    max-height: 200px;
+    white-space: nowrap;
+    overflow: auto;
+  }
+  .spandiv{
+    white-space: nowrap;
+  }
+  .selected{
+    background-color: lightblue;
+  }
+}
+

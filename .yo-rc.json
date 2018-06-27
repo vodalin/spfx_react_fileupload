@@ -1,0 +1,11 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "isCreatingSolution": true,
+    "environment": "spo",
+    "version": "1.5.1",
+    "libraryName": "fileuploader",
+    "libraryId": "2d34a029-e91e-4a53-bf69-f050f6a45333",
+    "packageManager": "npm",
+    "componentType": "webpart"
+  }
+}

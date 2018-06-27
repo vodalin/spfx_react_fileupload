@@ -1,0 +1,161 @@
+import {HttpcallerService} from './httpcaller.service';
+
+import {
+  IDigestCache,
+  DigestCache,
+  ISPHttpClientOptions
+} from '@microsoft/sp-http';
+import * as $ from 'jquery';
+
+export class SPAPIhelperService {
+  private curContext: any;
+  private cs: HttpcallerService;
+  private siteurl: string;
+  private subsiteRef: string;
+  private baseURL: string;
+  private urlSegments: string[];
+
+  private byTitleSect = '/lists/getByTitle(\'%\')';
+  private byServerRelSect = '/getfolderbyserverrelativeurl(\'%\')';
+
+  constructor(context) {
+    this.curContext = context;
+    this.cs = new HttpcallerService(this.curContext);
+    this.siteurl = this.curContext.pageContext.web.absoluteUrl; // https://xoom.sharepoint.com/sites/devsite
+    this.subsiteRef = this.curContext.pageContext.web.serverRelativeUrl; // /sites/devsite
+    this.baseURL = this.siteurl + '/_api/web'; // https://xoom.sharepoint.com/sites/devsite/_api/web
+  }
+
+  // Functions that interact with API
+  //***
+  public getSPData(resourcePath: string, filterObj?: object){
+    this.urlSegments = [resourcePath];
+    if(filterObj !== undefined){
+      this.urlSegments.push(this.makeQueryString(filterObj));
+    }
+    const callUrl = this.buildUrl(this.urlSegments);
+    return this.makeCall(this.cs.getCall(callUrl), 'getSPResource() failed');
+  }
+  //***
+  // public getLists(filterObj?: object) {
+  //   this.urlSegments = ['/lists', this.makeQueryString(filterObj)];
+  //   const callUrl = this.buildUrl(this.urlSegments);
+  //   return this.makeCall(this.cs.getCall(callUrl), 'getLists() failed');
+  // }
+  //
+  // public getListItems(listTitle: string, quObj?: object) {
+  //   this.urlSegments = [this.byTitleSect.replace('%', listTitle), '/items'];
+  //   if (quObj !== undefined){
+  //     this.urlSegments.push(this.makeQueryString(quObj));
+  //   }
+  //   const callUrl = this.buildUrl(this.urlSegments);
+  //   return this.makeCall(this.cs.getCall(callUrl), 'getListItems() failed');
+  // }
+  //
+  // public getListColumnNames(parameters: object) {
+  //   this.urlSegments = [this.byTitleSect.replace('%', parameters['listName']), '/Fields'];
+  //   this.urlSegments.push(this.makeQueryString(parameters['filterParams']));
+  //   const callUrl = this.buildUrl(this.urlSegments);
+  //   return this.makeCall(this.cs.getCall(callUrl), 'getListColumnNames() failed');
+  // }
+  //
+  // public addListItem(listTitle: string, itemData: object){
+  //   const itemtype = 'SP.Data.%ListItem'.replace('%', listTitle);
+  //   const opt: ISPHttpClientOptions = {
+  //     headers:{
+  //       'content-type': 'application/json',
+  //     },
+  //     body: JSON.stringify(itemData)
+  //   };
+  //   this.urlSegments = [this.byTitleSect.replace('%', listTitle), '/items'];
+  //   const callUrl = this.buildUrl(this.urlSegments);
+  //   return this.makeCall(this.cs.postCall(callUrl, opt), 'addItem() failed');
+  // }
+
+  // // Write item ID to a specific column for a file. Assuming target column is a SP picklist.
+  // public setItemColumn(listTitle: string, columnName: string, data: Object) {
+  //   this.urlSegments = [this.byTitleSect.replace('%', listTitle), '/items', '(\'' + data['itemid'] + '\')'];
+  //   const callUrl = this.buildUrl(this.urlSegments);
+  //   const writedata = {
+  //     //[columnName]: (data['meta']).toString()
+  //     Doc_x0020_TypeId: (data['meta']).toString()
+  //   };
+  //   const opt: ISPHttpClientOptions = {
+  //     headers:{
+  //       'IF-MATCH': '*',
+  //       'content-type': 'application/json',
+  //       'X-HTTP-METHOD': 'MERGE'
+  //     },
+  //     body: JSON.stringify(writedata)
+  //   };
+  //   return this.makeCall(this.cs.postCall(callUrl, opt), 'setItemColumn() failed');
+  // }
+  //
+  public uploadFiles(spfile: any, targetLibrary: string) {
+    const folderPath = targetLibrary + '/' + spfile.DestFolder;
+    this.urlSegments = [
+      this.byServerRelSect.replace('%', folderPath),
+      '/files/add(overwrite=true,url=\'' + spfile.RawFile.name + '\')'
+    ];
+    const callUrl = this.buildUrl(this.urlSegments);
+    const digestCache: IDigestCache = this.curContext.serviceScope.consume(DigestCache.serviceKey);
+    return Promise.all([
+      this.getFileBuffer(spfile.RawFile),
+      digestCache.fetchDigest(this.subsiteRef)
+    ])
+      .then(results => {
+        const digest = results[1];
+        const fbuffer = results[0];
+        const header = {
+          'accept': 'application/json;odata=verbose',
+          'X-RequestDigest': digest,
+          'content-length': fbuffer.byteLength
+        };
+        return this.cs.ajaxPost(callUrl, fbuffer, header);
+      })
+      .catch(err =>{
+        throw new Error('uploadFiles() failed. \n' + err.stack);
+      });
+  }
+
+  // URL building functions.
+  private buildUrl(segments: string[]): string {
+    let fullurl = this.baseURL;
+    segments.forEach(segment =>{
+      fullurl = fullurl + segment;
+    });
+    return fullurl;
+  }
+
+  private makeQueryString(queryobj: object) {
+    const template = '?$';
+    const result = [];
+    Object.keys(queryobj).forEach(key => {
+      const tempstring = key + '=' + queryobj[key];
+      result.push(tempstring);
+    });
+    return template + result.join('&$');
+  }
+
+  // MISC functions
+  private getFileBuffer(file){
+    const deferred = $.Deferred();
+    const reader = new FileReader();
+    reader.onloadend = (e) => {
+      deferred.resolve(e.target['result']);
+    };
+    reader.readAsArrayBuffer(file);
+    return deferred.promise();
+  }
+
+  private makeCall(callfn?: Promise<Object | void>, errorstring?: string) {
+    return Promise.resolve(callfn)
+      .then(result => {
+        return result;
+      })
+      .catch(err => {
+        throw new Error( errorstring + '\n' + err.stack);
+      });
+  }
+}
+
