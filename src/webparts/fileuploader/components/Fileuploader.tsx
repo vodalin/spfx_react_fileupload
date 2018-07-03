@@ -6,20 +6,32 @@ import {IFileuploaderProps} from "./IFileuploaderProps";
 
 //**
 import {OperatorService} from "../../../services/operator.service";
+import {IFieldData} from "../../../../lib/webparts/fileuploader/components/filetile/filetile";
+
+export interface ISubmit_Data{
+  filedata: any;
+  fieldpayload: IFieldData;
+}
 
 export default class RctUploader extends React.Component<IFileuploaderProps, {}> {
   public dropDiv: HTMLElement;
   public os: OperatorService;
   public RootFolder: string;
   public max_file_amount = 2;
+
   constructor(props) {
     super(props);
     this.state = {
       filetile_list: [],
-      rootfolder: ''
+      rootfolder: '',
+      submit_data: {},  // {
+                        //  File1.doc: {raw_file:{}, col1:{id:1,Text:"wah"}, col2:{id:undefined,Text:"hah"},
+                        //  File2.csv: {raw_file:{}, col1:{id:42,Text:"some"}, col2:{id:99,Text:"thing"}
+                        // }
     };
     this.os = new OperatorService(window['webPartContext']);
     this.handleDrop.bind(this);
+    this.handleSubmit.bind(this);
   }
 
   public componentDidMount() {
@@ -29,6 +41,42 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     if(this.dropDiv != undefined){
       addDropDivEvents(this.dropDiv, styles.highlight);
     }
+  }
+
+  //*******************************
+  public handleSubmit(){
+    let submit_data = this.state['submit_data'];
+    let target_library = this.props.target_library;
+    //let target_folder = target_library + '/' + this.state['rootfolder'];
+    let target_folder = this.state['rootfolder'];
+    //let target_folder = this.props.target_library;
+    this.os.startUploads(submit_data, target_folder, target_library);
+
+    // let upload_queue = [];
+    // Object.keys(submit_data).forEach(filekey => {
+    //   let datapayload = submit_data[filekey];
+    //   let raw_file = undefined;
+    //   let columndata = [];
+    //   Object.keys(datapayload).forEach(datakey => {
+    //     let cur_item = datapayload[datakey];
+    //     if(datakey == 'raw_file'){
+    //       raw_file = cur_item;
+    //     }
+    //     else{
+    //       columndata.push(cur_item)
+    //     }
+    //   });
+    //   console.log(raw_file, columndata);
+    // });
+  }
+
+  public getFieldData(child_data) {
+    let filename = Object.keys(child_data)[0];
+    let field_data = child_data[filename];
+    let state_data = this.state['submit_data'];
+    state_data[filename] = {...state_data[filename], ...field_data};
+
+    this.setState({'submit_data': state_data});
   }
 
   public makeHeaders() {
@@ -49,18 +97,27 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
         let currentTiles: Array<any> = this.state['filetile_list'];
         let newTileList: Array<any> = [];
 
-        Object.keys(files).sort().forEach((key: string, index) => {
+        for(let i=0; i < files.length; i++){
+          let current_file = files[i];
           if((currentTiles.length + newTileList.length) >= this.max_file_amount){
             this.setState({filetile_list: currentTiles.concat(newTileList)});
             throw EvalError('Exceeded file limit: ' + this.max_file_amount);
           }
           else{
+            //###
+            let subdata = this.state['submit_data'];
+            subdata[current_file['name']] = {raw_file: current_file};
+
             newTileList.push((
-              <Filetile file={files[key]} fieldschema={this.props.required_fields_schema}/>
+              <Filetile
+                file={current_file}
+                fieldschema={this.props.required_fields_schema}
+                getFieldData={this.getFieldData.bind(this)}
+              />
             ));
           }
-        });
-        this.setState({filetile_list: currentTiles.concat(newTileList)});
+          this.setState({filetile_list: currentTiles.concat(newTileList)});
+        }
       }
       else {
         throw EvalError('Rootfolder is empty.');
@@ -75,16 +132,16 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
         console.log(e);
       }
     }
+  }
 
+  public componentDidUpdate(){
+    //console.log(this.state['submit_data']);
   }
 
   public render(): React.ReactElement<IFileuploaderProps> {
-    // console.log(this.props.target_library);
-    // console.log(this.props.required_fields);
-    // console.log(this.props.required_fields_metadata);
-    // console.log(this.props.required_fields_schema);
     return (
       <div className={styles.rctUploader}>
+        {/*{Object.keys(this.state['submit_data']).length != 0 && <span>{JSON.stringify(this.state['submit_data'])}</span>}*/}
         {
           this.props.target_library != undefined ?
             <div>
@@ -93,7 +150,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
               <div ref={elem => this.dropDiv = elem} className={styles.uploadbin} onDrop={this.handleDrop.bind(this)}>
                 <p className={styles.droptext}>Drop Files Here!</p>
               </div>
-              <button className={styles.submitBtn}>SUBMIT</button>
+              <button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>
               <div className='filelist'>
                 <table>
                   {this.makeHeaders()}
@@ -105,8 +162,6 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
       </div>
     );
   }
-
-  //Helper functions
 
 }
 

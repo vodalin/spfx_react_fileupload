@@ -72,35 +72,30 @@ export class SPAPIhelperService {
   //   return this.makeCall(this.cs.postCall(callUrl, opt), 'addItem() failed');
   // }
 
-  // // Write item ID to a specific column for a file. Assuming target column is a SP picklist.
-  // public setItemColumn(listTitle: string, columnName: string, data: Object) {
-  //   this.urlSegments = [this.byTitleSect.replace('%', listTitle), '/items', '(\'' + data['itemid'] + '\')'];
-  //   const callUrl = this.buildUrl(this.urlSegments);
-  //   const writedata = {
-  //     //[columnName]: (data['meta']).toString()
-  //     Doc_x0020_TypeId: (data['meta']).toString()
-  //   };
-  //   const opt: ISPHttpClientOptions = {
-  //     headers:{
-  //       'IF-MATCH': '*',
-  //       'content-type': 'application/json',
-  //       'X-HTTP-METHOD': 'MERGE'
-  //     },
-  //     body: JSON.stringify(writedata)
-  //   };
-  //   return this.makeCall(this.cs.postCall(callUrl, opt), 'setItemColumn() failed');
-  // }
-  //
-  public uploadFiles(spfile: any, targetLibrary: string) {
-    const folderPath = targetLibrary + '/' + spfile.DestFolder;
+  // Write item ID to a specific column for a file. Assuming target column is a SP picklist.
+  public setItemColumn(target_library: string, fileId, coldata: Object, ) {
+    this.urlSegments = [this.byTitleSect.replace('%', target_library), '/items', '(\'' + fileId + '\')'];
+    const callUrl = this.buildUrl(this.urlSegments);
+    const opt: ISPHttpClientOptions = {
+      headers:{
+        'IF-MATCH': '*',
+        'content-type': 'application/json',
+        'X-HTTP-METHOD': 'MERGE'
+      },
+      body: JSON.stringify(coldata)
+    };
+    return this.makeCall(this.cs.postCall(callUrl, opt), 'setItemColumn() failed');
+  }
+
+  public uploadFiles(raw_file: any, target_folder: string) {
     this.urlSegments = [
-      this.byServerRelSect.replace('%', folderPath),
-      '/files/add(overwrite=true,url=\'' + spfile.RawFile.name + '\')'
+      this.byServerRelSect.replace('%', target_folder),
+      '/files/add(overwrite=true,url=\'' + raw_file.name + '\')'
     ];
     const callUrl = this.buildUrl(this.urlSegments);
     const digestCache: IDigestCache = this.curContext.serviceScope.consume(DigestCache.serviceKey);
     return Promise.all([
-      this.getFileBuffer(spfile.RawFile),
+      this.getFileBuffer(raw_file),
       digestCache.fetchDigest(this.subsiteRef)
     ])
       .then(results => {
@@ -111,6 +106,7 @@ export class SPAPIhelperService {
           'X-RequestDigest': digest,
           'content-length': fbuffer.byteLength
         };
+        //console.log(callUrl, fbuffer, header);
         return this.cs.ajaxPost(callUrl, fbuffer, header);
       })
       .catch(err =>{

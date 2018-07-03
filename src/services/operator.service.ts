@@ -1,6 +1,7 @@
 import {SPAPIhelperService} from './SPAPIhelper.service';
 import {IPropertyPaneDropdownOption} from '@microsoft/sp-webpart-base';
 import {filter} from "minimatch";
+import resolve = Promise.resolve;
 
 export class OperatorService {
   private spCaller: SPAPIhelperService;
@@ -8,10 +9,12 @@ export class OperatorService {
   private byTitleSect = '/lists/getByTitle(\'%\')';
   private byServerRelativeSect = '/getfolderbyserverrelativeurl(\'%\')';
   private byGUIDSelect = '/Lists(guid\'%\')';
+  private subsiteRef: string;
 
   constructor(context){
     this.curContext = context;
     this.spCaller = new SPAPIhelperService(context);
+    this.subsiteRef = this.curContext.pageContext.web.serverRelativeUrl; // /sites/devsite
   }
 
   public getAllLibraries(){
@@ -63,6 +66,64 @@ export class OperatorService {
         Top: 1000
       }
     ));
+  }
+
+  public startUploads(submit_data, target_folder, target_library){
+    let upload_pr_list = [];
+    let edit_pr_list = [];
+    let subfolder_path = target_library + '/' + target_folder;
+    let submit_data_keys = Object.keys(submit_data);
+    Object.keys(submit_data).forEach(filekey => {
+      let raw_file = submit_data[filekey]['raw_file'];
+      upload_pr_list.push(this.spCaller.uploadFiles(raw_file, subfolder_path));
+    });
+
+    Promise.all(upload_pr_list)
+      .then(val => {
+        return Promise.resolve(this.spCaller.getSPData(
+          this.byTitleSect.replace('%', target_library) + '/items',
+          {
+            Select: '*,LinkFilename,FileDirRef',
+            filter: encodeURI('FileDirRef eq \'' + this.subsiteRef + '/' + subfolder_path + '\''),
+            Top: 1000,
+          }
+        ));
+      })
+      .then(results => {
+        let filelist = results['value'];
+        filelist.forEach(file => {
+          let fileId = file['Id'];
+          let fileName = file['LinkFilename'];
+          if(submit_data_keys.indexOf(fileName) > -1){
+            let coldata = {};
+            let subdata = submit_data[fileName];
+            Object.keys(subdata).forEach(key =>{
+              if(key != 'raw_file'){
+                let finalvalue = undefined;
+                let colkey = '';
+                //When id != undefined, it indicates a lookup column
+                //Lookup column REST names always end with an 'Id'
+                subdata[key]['Id'] == undefined ? (
+                  finalvalue = subdata[key]['Text'],
+                  colkey=key
+                ) : (
+                  finalvalue = subdata[key]['Id'],
+                  colkey=key + 'Id');
+                coldata[colkey] = String(finalvalue);
+              }
+            });
+            edit_pr_list.push(this.spCaller.setItemColumn(target_library, fileId, coldata));
+          }
+        });
+        return edit_pr_list;
+      })
+      .then(pr_list =>{
+        Promise.all(pr_list)
+          .then(val =>{
+            console.log('All done');
+            return Promise.resolve();
+          });
+      });
   }
 
 
