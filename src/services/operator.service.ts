@@ -78,8 +78,9 @@ export class OperatorService {
       upload_pr_list.push(this.spCaller.uploadFiles(raw_file, subfolder_path));
     });
 
-    Promise.all(upload_pr_list)
+    return Promise.all(upload_pr_list)
       .then(val => {
+        console.log('start');
         return Promise.resolve(this.spCaller.getSPData(
           this.byTitleSect.replace('%', target_library) + '/items',
           {
@@ -118,7 +119,7 @@ export class OperatorService {
         return edit_pr_list;
       })
       .then(pr_list =>{
-        Promise.all(pr_list)
+        return Promise.all(pr_list)
           .then(val =>{
             console.log('All done');
             return Promise.resolve();

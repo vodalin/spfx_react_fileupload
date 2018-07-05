@@ -78,17 +78,6 @@ export class Filetile extends React.Component<IFileTileProps> {
     this.props.getFieldData({[this.mainfile['name']]: this.state['FieldObjects']});
   }
 
-  // public render(): React.ReactElement<IFileTileProps>{
-  //   return (
-  //     <tr className={styles.ftile}>
-  //       <div>
-  //         <span>{JSON.stringify(this.state['FieldObjects'])}</span><br/>
-  //         {this.makeInfoRow()}
-  //       </div>
-  //     </tr>
-  //   );
-  // }
-
   public render(): React.ReactElement<IFileTileProps>{
     return (<tr className={styles.ftile}>{this.makeInfoRow()}</tr>);
   }

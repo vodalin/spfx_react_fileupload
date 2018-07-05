@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styles from './Fileuploader.module.scss';
-import { escape } from '@microsoft/sp-lodash-subset';
+import {escape, flatten} from '@microsoft/sp-lodash-subset';
 import { Filetile } from "./filetile/filetile";
 import {IFileuploaderProps} from "./IFileuploaderProps";
 
@@ -28,6 +28,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
                         //  File1.doc: {raw_file:{}, col1:{id:1,Text:"wah"}, col2:{id:undefined,Text:"hah"},
                         //  File2.csv: {raw_file:{}, col1:{id:42,Text:"some"}, col2:{id:99,Text:"thing"}
                         // }
+      runningUpload: false,
     };
     this.os = new OperatorService(window['webPartContext']);
     this.handleDrop.bind(this);
@@ -43,31 +44,18 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     }
   }
 
-  //*******************************
   public handleSubmit(){
     let submit_data = this.state['submit_data'];
     let target_library = this.props.target_library;
-    //let target_folder = target_library + '/' + this.state['rootfolder'];
     let target_folder = this.state['rootfolder'];
-    //let target_folder = this.props.target_library;
-    this.os.startUploads(submit_data, target_folder, target_library);
-
-    // let upload_queue = [];
-    // Object.keys(submit_data).forEach(filekey => {
-    //   let datapayload = submit_data[filekey];
-    //   let raw_file = undefined;
-    //   let columndata = [];
-    //   Object.keys(datapayload).forEach(datakey => {
-    //     let cur_item = datapayload[datakey];
-    //     if(datakey == 'raw_file'){
-    //       raw_file = cur_item;
-    //     }
-    //     else{
-    //       columndata.push(cur_item)
-    //     }
-    //   });
-    //   console.log(raw_file, columndata);
-    // });
+    let allPr = this.os.startUploads(submit_data, target_folder, target_library);
+    //Start upload process
+    this.setState({runningUpload: true});
+    Promise.resolve(allPr)
+      .then(val =>{
+        //End upload process
+        this.setState({runningUpload: false});
+      });
   }
 
   public getFieldData(child_data) {
@@ -104,10 +92,8 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
             throw EvalError('Exceeded file limit: ' + this.max_file_amount);
           }
           else{
-            //###
             let subdata = this.state['submit_data'];
             subdata[current_file['name']] = {raw_file: current_file};
-
             newTileList.push((
               <Filetile
                 file={current_file}
@@ -147,10 +133,18 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
             <div>
               <span>Uploading to: {this.props.target_library + '/' + this.state['rootfolder']}</span>
               <br/>
-              <div ref={elem => this.dropDiv = elem} className={styles.uploadbin} onDrop={this.handleDrop.bind(this)}>
-                <p className={styles.droptext}>Drop Files Here!</p>
+              <div className={'DropDiv'}>
+                <div ref={elem => this.dropDiv = elem} className={styles.uploadbin} onDrop={this.handleDrop.bind(this)}>
+                  <p className={styles.droptext}>Drop Files Here!</p>
+                </div>
               </div>
-              <button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>
+              {/*<button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>*/}
+              {
+                this.state['runningUpload'] ?
+                  <button className={styles.loading} disabled>Working on it....</button>
+                :
+                  <button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>
+              }
               <div className='filelist'>
                 <table>
                   {this.makeHeaders()}
