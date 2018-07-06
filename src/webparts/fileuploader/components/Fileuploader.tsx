@@ -17,7 +17,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   public dropDiv: HTMLElement;
   public os: OperatorService;
   public RootFolder: string;
-  public max_file_amount = 2;
+  public max_file_amount = 100;
 
   constructor(props) {
     super(props);
@@ -42,6 +42,10 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     if(this.dropDiv != undefined){
       addDropDivEvents(this.dropDiv, styles.highlight);
     }
+  }
+
+  public handleReset(){
+    this.setState({submit_data: {}, filetile_list: []});
   }
 
   public handleSubmit(){
@@ -138,7 +142,6 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
                   <p className={styles.droptext}>Drop Files Here!</p>
                 </div>
               </div>
-              {/*<button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>*/}
               {
                 this.state['runningUpload'] ?
                   <button className={styles.loading} disabled>Working on it....</button>
@@ -151,6 +154,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
                   {this.state['filetile_list']}
                 </table>
               </div>
+              <button className={styles.reset} onClick={this.handleReset.bind(this)}>RESET</button>
             </div> : <div>Please select a target library.</div>
         }
       </div>

@@ -18,23 +18,21 @@ export interface IFileuploaderWebPartProps {
   target_fields: string;
 }
 import {OperatorService} from "../../services/operator.service";
+import resolve = Promise.resolve;
 
 export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuploaderWebPartProps> {
   public ops: OperatorService;
   public fieldKeyTemplate = 'targetField_';
   public propPaneList: Array<any> = []; // Master list of all property pane elements
   // Lists for dropdown menu options
-  public docLibNames = []; // List of all document libraries
   public fieldOptions = [];
   // Flags to signal data retrieval + panel refresh
   public startfetch = false;
   public addedfield = false;
   // Data passed to webparts
-  //public targetLib: string = 'default'; // Target document library name
   public targetLib: string = undefined;
   public selectedFields = [];
   public fieldMetaData = [];
-  // public fieldSchema = [];
   public fieldSchema = {};
 
   public render(): void {
@@ -57,15 +55,9 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
             required_fields_schema: this.fieldSchema
           }
         );
-        //console.log(this.properties, this.selectedFields, this.fieldMetaData);
         ReactDom.render(element, this.domElement);
       });
-
   }
-
-  // protected get dataVersion(): Version {
-  //   return Version.parse('1.0');
-  // }
 
   // Sets flags / variables to for when the getOptions() method is fired.
   protected onPropertyPaneFieldChanged(propertyPath: string, oldValue: any, newValue: any): void {
@@ -85,6 +77,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
       this.fieldSchema = {};
       this.getSelectedFields();
     }
+    return super.onPropertyPaneFieldChanged(propertyPath, oldValue, newValue);
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
@@ -123,7 +116,8 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
           groups: [
             {
               groupName: strings.BasicGroupName,
-              groupFields: this.propPaneList
+              //groupFields: this.propPaneList
+              groupFields: this._getPropFields(),
             }
           ]
         }
@@ -133,7 +127,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
 
   //*** Helper functions
   private initParams(){
-    //console.log(this.properties);
     let pr = Promise.resolve()
       .then(val =>{
         let keylist = Object.keys(this.properties);
@@ -277,5 +270,9 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
       });
     });
     return prarray;
+  }
+
+  private _getPropFields(){
+    return this.propPaneList;
   }
 }
