@@ -36,6 +36,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public componentDidMount() {
+    //console.log(this.props.required_fields, this.props.required_fields_schema);
     const url = new URL(window.location.href);
     this.setState({rootfolder: url.searchParams.get('RootFolder')});
 
@@ -125,12 +126,14 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public componentDidUpdate(){
-    //console.log(this.state['submit_data']);
+    console.log(this.props.required_fields, this.props.required_fields_schema);
   }
 
   public render(): React.ReactElement<IFileuploaderProps> {
     return (
       <div className={styles.rctUploader}>
+        {/*<span>{JSON.stringify(this.props['target_library'])}</span>*/}
+        {/*<span>{JSON.stringify(this.props['required_fields'])}</span>*/}
         {/*{Object.keys(this.state['submit_data']).length != 0 && <span>{JSON.stringify(this.state['submit_data'])}</span>}*/}
         {
           this.props.target_library != undefined ?

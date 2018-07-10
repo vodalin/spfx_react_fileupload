@@ -17,7 +17,9 @@ export class OperatorService {
     this.subsiteRef = this.curContext.pageContext.web.serverRelativeUrl; // /sites/devsite
   }
 
+  // These functions make dropdown options for the property pane.
   public getAllLibraries(){
+    /*Gets all doc library names in site, returns them as drop down options.*/
     return Promise.resolve(this.spCaller.getSPData(
       '/Lists',
       {
@@ -32,6 +34,17 @@ export class OperatorService {
   }
 
   public getListFields(targetList: string) {
+    /*Gets the fields of the <targetList> and returns an object with 2 properties:
+    *{
+    *  dropdownoptions: ({key: "FileLeafRef", text: "FileLeafRef"}, {key: "MNMCorrespondent_x003a_ID", text: "MNMCorrespondent_x003a_ID"})
+    *  rawdata: { //Raw field metadata
+    *   value: (
+    *     {@odata.type:"#SP.Field",InternalName:"FileLeafRef",Title:"Name"},
+    *     {@odata.type:"#SP.FieldLookup",InternalName:"MNMCorrespondent",LookupList:{6ab6c578-6194-4903-865e-e1e00d23adb8},Title:"MNMCorrespondent"}
+    *   )
+    *  }
+    *}
+    */
     let fieldMetaData = {};
     return Promise.resolve(this.spCaller.getSPData(
       this.byTitleSect.replace('%', targetList) + '/Fields',
