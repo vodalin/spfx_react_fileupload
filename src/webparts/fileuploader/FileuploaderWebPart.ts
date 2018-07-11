@@ -224,7 +224,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
       options: this.reqFieldOptions
     });
   }
-  
+
   //**************** Misc stuff ********************
   private getReqFieldCount() {
     /*Counts number of web part elements that contain <this.fieldKeyTemplate> in their 'targetProperty' property. */

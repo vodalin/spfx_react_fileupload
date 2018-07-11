@@ -1,11 +1,8 @@
 import * as React from 'react';
 import styles from './Fileuploader.module.scss';
-import {escape, flatten} from '@microsoft/sp-lodash-subset';
 import { Filetile } from "./filetile/filetile";
-//import {IFileuploaderProps} from "./IFileuploaderProps";
 import IFileuploaderProps from "./IFileuploaderProps";
 
-//**
 import {OperatorService} from "../../../services/operator.service";
 import {IFieldData} from "../../../../lib/webparts/fileuploader/components/filetile/filetile";
 
@@ -37,7 +34,6 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public componentDidMount() {
-    //console.log(this.props.required_fields, this.props.required_fields_schema);
     const url = new URL(window.location.href);
     this.setState({rootfolder: url.searchParams.get('RootFolder')});
 
@@ -51,18 +47,17 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public handleSubmit(){
-    console.log(this.props.required_fields_schema);
-    // let submit_data = this.state['submit_data'];
-    // let target_library = this.props.target_library;
-    // let target_folder = this.state['rootfolder'];
-    // let allPr = this.os.startUploads(submit_data, target_folder, target_library);
-    // //Start upload process
-    // this.setState({runningUpload: true});
-    // Promise.resolve(allPr)
-    //   .then(val =>{
-    //     //End upload process
-    //     this.setState({runningUpload: false});
-    //   });
+    let submit_data = this.state['submit_data'];
+    let target_library = this.props.target_library;
+    let target_folder = this.state['rootfolder'];
+    let allPr = this.os.startUploads(submit_data, target_folder, target_library);
+    //Start upload process
+    this.setState({runningUpload: true});
+    Promise.resolve(allPr)
+      .then(val =>{
+        //End upload process
+        this.setState({runningUpload: false});
+      });
   }
 
   public getFieldData(child_data) {
@@ -113,7 +108,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
         }
       }
       else {
-        throw EvalError('Rootfolder is empty.');
+        throw EvalError('RootFolder is empty.');
       }
     }
     catch (e) {
@@ -128,7 +123,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public componentDidUpdate(){
-    console.log(this.props.required_fields, this.props.required_fields_schema);
+    //console.log(this.props.required_fields, this.props.required_fields_schema);
   }
 
   public render(): React.ReactElement<IFileuploaderProps> {
