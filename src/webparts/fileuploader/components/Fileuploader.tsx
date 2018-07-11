@@ -2,7 +2,8 @@ import * as React from 'react';
 import styles from './Fileuploader.module.scss';
 import {escape, flatten} from '@microsoft/sp-lodash-subset';
 import { Filetile } from "./filetile/filetile";
-import {IFileuploaderProps} from "./IFileuploaderProps";
+//import {IFileuploaderProps} from "./IFileuploaderProps";
+import IFileuploaderProps from "./IFileuploaderProps";
 
 //**
 import {OperatorService} from "../../../services/operator.service";
@@ -50,17 +51,18 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public handleSubmit(){
-    let submit_data = this.state['submit_data'];
-    let target_library = this.props.target_library;
-    let target_folder = this.state['rootfolder'];
-    let allPr = this.os.startUploads(submit_data, target_folder, target_library);
-    //Start upload process
-    this.setState({runningUpload: true});
-    Promise.resolve(allPr)
-      .then(val =>{
-        //End upload process
-        this.setState({runningUpload: false});
-      });
+    console.log(this.props.required_fields_schema);
+    // let submit_data = this.state['submit_data'];
+    // let target_library = this.props.target_library;
+    // let target_folder = this.state['rootfolder'];
+    // let allPr = this.os.startUploads(submit_data, target_folder, target_library);
+    // //Start upload process
+    // this.setState({runningUpload: true});
+    // Promise.resolve(allPr)
+    //   .then(val =>{
+    //     //End upload process
+    //     this.setState({runningUpload: false});
+    //   });
   }
 
   public getFieldData(child_data) {
@@ -132,9 +134,6 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   public render(): React.ReactElement<IFileuploaderProps> {
     return (
       <div className={styles.rctUploader}>
-        {/*<span>{JSON.stringify(this.props['target_library'])}</span>*/}
-        {/*<span>{JSON.stringify(this.props['required_fields'])}</span>*/}
-        {/*{Object.keys(this.state['submit_data']).length != 0 && <span>{JSON.stringify(this.state['submit_data'])}</span>}*/}
         {
           this.props.target_library != undefined ?
             <div>

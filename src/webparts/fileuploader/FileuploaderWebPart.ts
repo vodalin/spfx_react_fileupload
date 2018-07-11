@@ -9,81 +9,68 @@ import {
 
 import * as strings from 'FileuploaderWebPartStrings';
 import Fileuploader from './components/Fileuploader';
+import IFileuploaderProps from './components/IFileuploaderProps';
+
+// export interface IFileuploaderWebPartProps {
+//   description: string;
+//   targetlib: any;
+//   required_fields: any;
+//   target_fields: string;
+// }
 
 export interface IFileuploaderWebPartProps {
-  description: string;
-  targetlib: any;
-  required_fields: any;
-  target_fields: string;
-}
-
-export interface IFileuploaderWebPartProps2 {
   description: string;
   pr_targetlibrary: string;
   pr_addbutton: string;
 }
 
 import {OperatorService} from "../../services/operator.service";
-import {IFileuploaderWebPartProps} from "../../../lib/webparts/fileuploader/FileuploaderWebPart";
+import {forIn} from "@microsoft/sp-lodash-subset";
+// import {IFileuploaderWebPartProps} from "../../../lib/webparts/fileuploader/FileuploaderWebPart";
 
-export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuploaderWebPartProps2> {
-  /*this.propertes = {
-   pr_targetlibrary : "2017 Compliance Documents",
-   targetField_1 : "FileLeafRef"
-  }*/
+
+export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuploaderWebPartProps> {
   public ops: OperatorService;
   public fieldKeyTemplate = 'targetField_';
   public fieldKeyRegExp = new RegExp(this.fieldKeyTemplate, 'g');
-  public propPaneList: Array<any> = []; // Master list of all property pane elements
+
+  // Master list of all property pane elements
+  public propPaneList: Array<any> = [];
+
   // Lists for dropdown menu options
   public reqFieldOptions = [];
-  // Flags to signal data retrieval + panel refresh
-  public refetch = false;
-  // public addedfield = false;
-  // Data passed to webparts
+  public libraryOptions = [];
+
+  // Data passed to child webparts
   public targetLib: string = undefined;
-  public selectedFields = [];
-  public fieldMetaData = [];
+  public reqFieldMetaData = [];
   public fieldSchema = {};
 
-
-  //******************* NOW THE PROPERTIES IN FILEUPLOADER AREN'T UPDATING
   protected onInit(): Promise<void>{
     window['webPartContext'] = this.context;
     this.ops = new OperatorService(this.context);
-    this.targetLib = this.properties['pr_targetlibrary'];
 
-    /*If <this.properties> contains old data, generate the appropriate property pane elements.*/
-    Promise.all([this.initialSetup()])
-      .then(val => {
-        if(this.targetLib != undefined){
-          return this.setFieldData();
-        }
-      })
-      .then(val => {
-        this.getPropKeys().forEach(key => {
-          if(key.match(this.fieldKeyRegExp)){
-            this.addRequiredField(key);
-          }
-        });
-        //this.refetch = true;
-        //  this.setSelectedFields();
-        //  this.getLookupData();
-      });
+
     return super.onInit();
   }
 
   public render(): void {
-    this.setSelectedFields();
-    Promise.all(this.getLookupData())
-      .then(val =>{
-        const element: React.ReactElement<IFileuploaderWebPartProps> = React.createElement(
+    Promise.all(this.scanProperties())
+      .then(val => {
+        this.plugPaneElement([ this.createLibraryDropDown(), this.createAddButton()]);
+        this.getPropKeys().forEach(key => {
+          if (key.match(this.fieldKeyRegExp)){
+            this.plugPaneElement([this.addRequiredField(key)]);
+          }
+        });
+        return(this.setFieldSchema());
+      })
+      .then(val => {
+        const element: React.ReactElement<IFileuploaderProps> = React.createElement(
           Fileuploader,
           {
             description: this.properties.description,
             target_library: this.targetLib,
-            required_fields: this.selectedFields,
-            //required_fields_metadata: this.fieldMetaData,
             required_fields_schema: this.fieldSchema,
           }
         );
@@ -94,20 +81,12 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   protected onPropertyPaneFieldChanged(propertyPath: string, oldValue: any, newValue: any): void {
     if (propertyPath === 'pr_targetlibrary') { // only runs when the targetLib property is changed.
       this.targetLib = newValue;
-      Promise.resolve(this.setFieldData())
-        .then(val => {
-          this.resetProperties();
-          this.resetPropPaneList();
-          this.context.propertyPane.refresh();
-        });
+      this.resetProperties();
+      this.resetPropPaneList();
+      this.context.propertyPane.refresh();
     }
     else if(propertyPath === 'pr_addbutton') {
-      this.addRequiredField();
-    }
-    else {
-      //this.refetch = true;
-      //  this.setSelectedFields();
-      //  this.getLookupData();
+      this.plugPaneElement([this.addRequiredField()]);
     }
     return super.onPropertyPaneFieldChanged(propertyPath, oldValue, newValue);
   }
@@ -131,55 +110,59 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   }
 
   //**************** Helper functions ********************
-  private initialSetup(){
-    /*On startup, create 'add field' button and target library dropdown.*/
-    let pBtn_AddField = PropertyPaneButton('pr_addbutton', {
-      text: "Add Field",
-      buttonType: PropertyPaneButtonType.Primary,
-      onClick: ()=>{},
+  private scanProperties(){
+    /* Scans the web part properties and updates relevant variables */
+    let prArray = [this.getLibraryOptions()];
+    this.getPropKeys().forEach(key => {
+      if(key == 'pr_targetlibrary'){
+        this.targetLib = this.properties[key];
+        prArray.push(this.setFieldData());
+      }
     });
-
-    return Promise.resolve(this.ops.getAllLibraries())
-      .then((results: IPropertyPaneDropdownOption[]) => {
-        let pDD_DocumentLibraries = PropertyPaneDropdown('pr_targetlibrary', {
-          label: 'Target Library',
-          options: results
-        });
-        this.propPaneList.push(pDD_DocumentLibraries, pBtn_AddField);
-      })
+    return prArray;
   }
 
-  private setFieldData(){
-    /*Updates the field metadata used throughout this webpart and its child components */
-    return Promise.resolve(this.ops.getListFields(this.targetLib))
-      .then(fielddata => {
-        this.reqFieldOptions = fielddata['dropdownoptions'];
-        this.fieldMetaData = fielddata['rawdata']['value'];
+  private getLibraryOptions() {
+    return Promise.resolve(this.ops.getAllLibraries())
+      .then((results: IPropertyPaneDropdownOption[]) => {
+        this.libraryOptions = results;
       });
   }
 
-  private setSelectedFields() {
-    /* Uses <this.selectedFileds> to track which required fields were selected. */
-    let selectedFieldsArray = [];
-    this.getPropKeys().forEach((key: string) => {
-      if (key.match(this.fieldKeyRegExp)){
-        selectedFieldsArray.push(this.properties[key]);
-      }
-    });
-    this.selectedFields = selectedFieldsArray;
+  private setFieldData(){
+    /*Updates the 'required field' info which is used throughout this webpart and its child components */
+    return Promise.resolve(this.ops.getListFields(this.targetLib))
+      .then(fielddata => {
+        this.reqFieldOptions = fielddata['dropdownoptions'];
+        this.reqFieldMetaData = fielddata['rawdata']['value'];
+      });
   }
 
-  private addRequiredField(fieldname?){
-    /* Adds a 'required field' dropdown menu to the property pane. */
-    let property_label = '';
-    (fieldname != undefined) ? property_label = fieldname : property_label = this.fieldKeyTemplate + (this.getReqFieldCount() + 1).toString();
-
-    let pDD_LibraryFields = PropertyPaneDropdown(property_label, {
-      label: 'Required Field',
-      options: this.reqFieldOptions
+  private setFieldSchema(): void {
+    /* Check if any 'required fields' are lookup types. If so, then get the lookup table's data (title,Id)
+    * and set it in this.fieldSchema.
+    */
+    let field_metadata = this.reqFieldMetaData;
+    let selected_fileds = [];
+    this.getPropKeys().forEach(key => {
+      if(key.match(this.fieldKeyRegExp)){
+        selected_fileds.push(this.properties[key]);
+      }
     });
 
-    this.propPaneList.push(pDD_LibraryFields);
+    this.fieldSchema = {};
+    selected_fileds.forEach((fieldname: string) =>{
+      this.fieldSchema[fieldname] = {};
+      field_metadata.forEach(item => {
+        if(fieldname == item['InternalName'] && item['@odata.type'] == '#SP.FieldLookup'){
+          let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
+          Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
+            .then(results => {
+              this.fieldSchema[fieldname] = results;
+            });
+        }
+      });
+    });
   }
 
   private resetProperties(): void {
@@ -199,38 +182,55 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     this.propPaneList = delete_list;
   }
 
-  private getLookupData() {
-    /* Check if any 'required fields' are lookup types. If so, then get the lookup table's data (title,Id)
-    * and set it in this.fieldSchema.
-    */
-    let target_fileds = this.selectedFields;
-    let field_metadata = this.fieldMetaData;
-    let prarray = [];
-    this.fieldSchema = {};
+  //**************** Property Pane Element Functions ********************
 
-    target_fileds.forEach((fieldname: string) => {
-      this.fieldSchema[fieldname] = {};
-      field_metadata.forEach(item => {
-        if(fieldname == item['InternalName'] && item['@odata.type'] == '#SP.FieldLookup'){
-          let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
-          prarray.push(
-            Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
-              .then(results => {
-                this.fieldSchema[fieldname] = results;
-              })
-          );
-        }
-      });
+  private createAddButton() {
+    /* Creates add field button */
+    return PropertyPaneButton('pr_addbutton', {
+      text: "Add Field",
+      buttonType: PropertyPaneButtonType.Primary,
+      onClick: ()=>{},
     });
-    return prarray;
   }
 
+  private createLibraryDropDown(){
+    /* Creates 'Target Library' dropdown menu */
+    return PropertyPaneDropdown('pr_targetlibrary', {
+      label: 'Target Library',
+      options: this.libraryOptions
+    });
+  }
+
+  private plugPaneElement(pPaneElements: Array<any>): void{
+    /*Checks to see if element already exists before adding it to <this.propPaneList> */
+    let existing_fields = this.propPaneList.map(ele => {
+      return ele['targetProperty'];
+    });
+    pPaneElements.forEach(element => {
+      let eleId = element['targetProperty'];
+      if(existing_fields.indexOf(eleId) == -1){
+        this.propPaneList.push(element);
+      }
+    });
+  }
+
+  private addRequiredField(fieldname?){
+    /* Adds a 'required field' dropdown menu to the property pane. */
+    let property_label = '';
+    (fieldname != undefined) ? property_label = fieldname : property_label = this.fieldKeyTemplate + (this.getReqFieldCount() + 1).toString();
+
+    return PropertyPaneDropdown(property_label, {
+      label: 'Required Field',
+      options: this.reqFieldOptions
+    });
+  }
+  
   //**************** Misc stuff ********************
   private getReqFieldCount() {
     /*Counts number of web part elements that contain <this.fieldKeyTemplate> in their 'targetProperty' property. */
     let property_list = this.getAllProperties();
     let existing_rfields = property_list.filter(prop_name => {
-      return prop_name.match(this.fieldKeyRegExp)
+      return prop_name.match(this.fieldKeyRegExp);
     });
     return existing_rfields.length;
   }

@@ -1,4 +1,4 @@
-export interface IFileuploaderProps {
+export default interface IFileuploaderProps {
   description: string;
   target_library: string;
   required_fields: Array<any>;
