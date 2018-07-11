@@ -5,6 +5,7 @@ import IFileuploaderProps from "./IFileuploaderProps";
 
 import {OperatorService} from "../../../services/operator.service";
 import {IFieldData} from "../../../../lib/webparts/fileuploader/components/filetile/filetile";
+import {ObjectIterator} from "lodash";
 
 export interface ISubmit_Data{
   filedata: any;
@@ -15,7 +16,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   public dropDiv: HTMLElement;
   public os: OperatorService;
   public RootFolder: string;
-  public max_file_amount = 100;
+  public max_file_amount = 2;
 
   constructor(props) {
     super(props);
@@ -79,46 +80,30 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public handleDrop(event){
-    try{
-      // Error checking after dropping files.
-      if(this.state['rootfolder'] != null) {
-        event.stopPropagation();
-        const files = event.dataTransfer.files;
-        let currentTiles: Array<any> = this.state['filetile_list'];
-        let newTileList: Array<any> = [];
+    /* Process files dropped into this.dropdiv */
+    let tiles: Array<any> = this.state['filetile_list'];
+    let evt_files = event.dataTransfer.files;
+    let filelist = Object.keys(evt_files).map(key => {
+      return evt_files[key];
+    });
 
-        for(let i=0; i < files.length; i++){
-          let current_file = files[i];
-          if((currentTiles.length + newTileList.length) >= this.max_file_amount){
-            this.setState({filetile_list: currentTiles.concat(newTileList)});
-            throw EvalError('Exceeded file limit: ' + this.max_file_amount);
+    try {
+      if(this.state['rootfolder'] != null){
+        filelist.forEach(file => {
+          if((tiles.length + 1) <= this.max_file_amount){
+            this.addToSubmitData(file);
+            this.addFileTile(file);
           }
-          else{
-            let subdata = this.state['submit_data'];
-            subdata[current_file['name']] = {raw_file: current_file};
-            newTileList.push((
-              <Filetile
-                file={current_file}
-                fieldschema={this.props.required_fields_schema}
-                getFieldData={this.getFieldData.bind(this)}
-              />
-            ));
+          else {
+            throw new EvalError('Exceeded file limit: ' + this.max_file_amount);
           }
-          this.setState({filetile_list: currentTiles.concat(newTileList)});
-        }
-      }
-      else {
-        throw EvalError('RootFolder is empty.');
-      }
-    }
-    catch (e) {
-      if(e instanceof EvalError){
-        alert(e.message);
+        });
       }
       else{
-        alert('Error occured.');
-        console.log(e);
+        throw new EvalError('Missing ?RootFolder query parameter.');
       }
+    } catch (e){
+      (e instanceof EvalError) ? alert(e.message) : console.log(e);
     }
   }
 
@@ -158,6 +143,40 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     );
   }
 
+  private addToSubmitData(file){
+    /* Adds to or updates the <submit_data> state variable with <file> */
+    let filename = file['name'];
+    let sub_data = this.state['submit_data'];
+    let sub_item = sub_data[filename];
+    (sub_item == undefined) ? sub_data[filename] = {'raw_file': file} : sub_item['raw_file'] = file;
+
+    this.setState({'submit_data': sub_data});
+  }
+
+  private addFileTile(file){
+    /* Checks the key(filename) of each tile in <state[filetile_list]>
+    *  If a key already exists, then do not add another tile.
+    * */
+    let filename = file['name'];
+    let tile_list = this.state['filetile_list'];
+    let matching_tiles = tile_list.filter(tileObj => {
+      if(tileObj['key'] == filename){ return tileObj; }
+    });
+
+    if(matching_tiles.length == 0){
+      let newTile = (
+        <Filetile
+          key = {filename}
+          file={file}
+          fieldschema={this.props.required_fields_schema}
+          getFieldData={this.getFieldData.bind(this)}
+        />
+      );
+      tile_list.push(newTile);
+
+      this.setState({'filetile_list': tile_list});
+    }
+  }
 }
 
 function addDropDivEvents(element, highlightclass?){
