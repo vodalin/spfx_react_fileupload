@@ -115,33 +115,46 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     return (
       <div className={styles.rctUploader}>
         {
-          this.props.target_library != undefined ?
-            <div>
-              <span>Uploading to: {this.props.target_library + '/' + this.state['rootfolder']}</span>
-              <br/>
-              <div className={'DropDiv'}>
-                <div ref={elem => this.dropDiv = elem} className={styles.uploadbin} onDrop={this.handleDrop.bind(this)}>
-                  <p className={styles.droptext}>Drop Files Here!</p>
-                </div>
-              </div>
-              {
-                this.state['runningUpload'] ?
-                  <button className={styles.loading} disabled>Working on it....</button>
-                :
-                  <button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>
-              }
-              <div className='filelist'>
-                <table>
-                  {this.makeHeaders()}
-                  {this.state['filetile_list']}
-                </table>
-              </div>
-              <button className={styles.reset} onClick={this.handleReset.bind(this)}>RESET</button>
-            </div> : <div>Please select a target library.</div>
+          (this.props.target_library != undefined) ? this.getUploaderTemplate() : this.getPromptTemplate()
         }
       </div>
     );
   }
+
+  /************* Helper functions *************/
+  private getUploaderTemplate() {
+    /* Generates main template */
+    return (
+      <div>
+        <span>Uploading to: {this.props.target_library + '/' + this.state['rootfolder']}</span>
+        <br/>
+        <div className={'DropDiv'}>
+          <div ref={elem => this.dropDiv = elem} className={styles.uploadbin} onDrop={this.handleDrop.bind(this)}>
+            <p className={styles.droptext}>Drop Files Here!</p>
+          </div>
+        </div>
+        {
+          this.state['runningUpload'] ?
+            <button className={styles.loading} disabled>Working on it....</button>
+            :
+            <button className={styles.submitBtn} onClick={this.handleSubmit.bind(this)}>SUBMIT</button>
+        }
+        <div className='filelist'>
+          <table>
+            {this.makeHeaders()}
+            {this.state['filetile_list']}
+          </table>
+        </div>
+        <button className={styles.reset} onClick={this.handleReset.bind(this)}>RESET</button>
+      </div>
+    )
+  }
+
+  private getPromptTemplate(){
+    /* Generates template used when no library is selected */
+    return (<div>Please select a target library.</div>)
+  }
+
 
   private addToSubmitData(file){
     /* Adds to or updates the <submit_data> state variable with <file> */
@@ -179,6 +192,8 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 }
 
+
+/************* Drop div default event handlers *************/
 function addDropDivEvents(element, highlightclass?){
   // Adds an event listener that prevents the default behaviors for the listed events.
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
