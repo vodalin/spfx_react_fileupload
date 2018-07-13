@@ -43,10 +43,6 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     }
   }
 
-  public componentDidUpdate(){
-    //console.log(this.props.required_fields, this.props.required_fields_schema);
-  }
-
   public render(): React.ReactElement<IFileuploaderProps> {
     return (
       <div className={styles.rctUploader}>
@@ -57,11 +53,12 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     );
   }
 
-
   /************* Helper functions *************/
   public handleReset(){
+    //Wipes out file tiles and submit data.
     this.setState({submit_data: {}, filetile_list: []});
   }
+
 
   public handleSubmit(){
     /* Action for submit button; starts uploading all files in <state.submit_data> */
@@ -78,21 +75,13 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   }
 
   public getFieldData(child_data) {
+    /* Action that fires every time a child tile changes its fields. */
     let filename = Object.keys(child_data)[0];
     let field_data = child_data[filename];
     let state_data = this.state['submit_data'];
     state_data[filename] = {...state_data[filename], ...field_data};
 
     this.setState({'submit_data': state_data});
-  }
-
-  public makeHeaders() {
-    let headers = [<th>Title</th>];
-    Object.keys(this.props.required_fields_schema).sort().forEach((key,index) => {
-      headers.push(<th key={index.toString()}>{key}</th>);
-    });
-    let header_row = (<tr>{headers}</tr>);
-    return header_row;
   }
 
   public handleDrop(event){
@@ -184,15 +173,25 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
         </div>
         <button className={styles.reset} onClick={this.handleReset.bind(this)}>RESET</button>
       </div>
-    )
+    );
   }
 
   private getPromptTemplate(){
     /* Generates template used when no library is selected */
-    return (<div>Please select a target library.</div>)
+    return (<div>Please select a target library.</div>);
   }
-}
 
+  public makeHeaders() {
+    /* Make header labels for main table */
+    let headers = [<th>Title</th>];
+    Object.keys(this.props.required_fields_schema).sort().forEach((key,index) => {
+      headers.push(<th key={index.toString()}>{key}</th>);
+    });
+    let header_row = (<tr>{headers}</tr>);
+    return header_row;
+  }
+
+}
 
 /************* Drop div default event handlers *************/
 function addDropDivEvents(element, highlightclass?){

@@ -6,6 +6,7 @@ export interface IMiniSelectProps {
   options: Array<any>;
   fieldname: string;
   parentcallback: Function;
+  columndata: {};
 }
 
 import {IFieldData} from "../filetile";
@@ -13,7 +14,6 @@ import {IFieldData} from "../filetile";
 export class Miniselector extends React.Component<IMiniSelectProps> {
   public textInput: HTMLElement;
   public optionDiv: HTMLElement;
-  public minidiv: HTMLElement;
   public classlist: Array<any>;
   public classObj: Object;
   public cx: any;
@@ -91,8 +91,6 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
 
   public verifyInput(text){
     let inputdata = this.props.options;
-    let itemId = undefined;
-    let itemText = text;
     let fielddata: IFieldData = {
       FieldName: this.props.fieldname,
       Id: 0,
@@ -172,28 +170,68 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
     return comparison;
   }
 
-
   public render(): React.ReactElement<IMiniSelectProps>{
     let className = this.cx(this.state['classObj']);
     return (
       <div className={styles.minselect}>
-        <div className={styles.restricted_div}>
-          <input ref={(elem) => this.textInput = elem}
-                 onFocus={this.showDiv} onBlur={this.hideDiv}
-                 onChange={this.txtChanged}
-                 value={this.state['searchtext']}
-                 className = {this.state['isValid'] ? styles.isValid : styles.notValid}
-          />
-          <div ref={(elem) => this.optionDiv = elem} className={className}>
-            <table>
-              <tbody>
-                {this.makeDropDiv()}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {this.setInputType()}
       </div>
     );
+  }
+
+  // public render(): React.ReactElement<IMiniSelectProps>{
+  //   let className = this.cx(this.state['classObj']);
+  //   return (
+  //     <div className={styles.minselect}>
+  //       <div className={styles.restricted_div}>
+  //         <input ref={(elem) => this.textInput = elem}
+  //                onFocus={this.showDiv} onBlur={this.hideDiv}
+  //                onChange={this.txtChanged}
+  //                value={this.state['searchtext']}
+  //                className = {this.state['isValid'] ? styles.isValid : styles.notValid}
+  //         />
+  //         <div ref={(elem) => this.optionDiv = elem} className={className}>
+  //           <table>
+  //             <tbody>
+  //               {this.makeDropDiv()}
+  //             </tbody>
+  //           </table>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+
+  private setInputType(){
+    let inputElement = undefined;
+    let dataKeyList = Object.keys(this.props.columndata);
+    let className = this.cx(this.state['classObj']);
+    if(dataKeyList.length == 0){
+      inputElement = (<input></input>);
+    }
+    else{
+      inputElement = (
+        <div className={styles.minselect}>
+          <div className={styles.restricted_div}>
+            <input ref={(elem) => this.textInput = elem}
+                   onFocus={this.showDiv} onBlur={this.hideDiv}
+                   onChange={this.txtChanged}
+                   value={this.state['searchtext']}
+                   className = {this.state['isValid'] ? styles.isValid : styles.notValid}
+            />
+            <div ref={(elem) => this.optionDiv = elem} className={className}>
+              <table>
+                <tbody>
+                {this.makeDropDiv()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return inputElement;
   }
 
 }

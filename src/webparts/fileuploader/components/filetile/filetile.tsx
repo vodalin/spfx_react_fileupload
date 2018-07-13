@@ -3,12 +3,11 @@ import styles from './filetile.module.scss';
 import {Miniselector} from "./miniselector/miniselector";
 import {IFieldData} from "../../../../../lib/webparts/fileuploader/components/filetile/filetile";
 
-
 export interface IFileTileProps {
   file: any;
   fieldschema: Array<any>;  // {
-                            //   Author: {},
-                            //   MNMCorrespondent: {
+                            //   Column1: {},
+                            //   Column2: {
                             //      value:[{Id: 1, Title: bank1}, {Id: 2, Title: bank2}]
                             //   }
                             // }
@@ -26,7 +25,6 @@ export class Filetile extends React.Component<IFileTileProps> {
   constructor(props){
     super(props);
     this.state = {
-      //File: this.props.file,
       FieldObjects: {},
     };
     this.handleChange = this.handleChange.bind(this);
@@ -48,31 +46,51 @@ export class Filetile extends React.Component<IFileTileProps> {
   }
 
   public makeInfoRow() {
-    let rowschema = this.props.fieldschema;
+    let fieldschema = this.props.fieldschema;
     let infoColumns = [<td>{this.mainfile['name']}</td>];
 
-    Object.keys(rowschema).sort().forEach((key,index) =>{
-      let column_element = undefined;
-      if(Object.keys(rowschema[key]).length == 0) {
-        column_element = (
-          <td key={index.toString()}>
-            <input data-fieldname={key} onChange={this.textChange} accessKey={key}/>
-          </td>);
-      }
-      else{
-        column_element = (
-          <td key={index.toString()}>
-            <Miniselector
-              fieldname={key}
-              options={rowschema[key]['value']}
-              parentcallback = {this.handleChange}
-            />
-          </td>);
-      }
+    Object.keys(fieldschema).sort().forEach((key,index) =>{
+      let column_element = (
+        <td key={index.toString()}>
+          <Miniselector
+            fieldname={key}
+            options={fieldschema[key]['value']}
+            parentcallback = {this.handleChange}
+            columndata={fieldschema[key]}
+          />
+        </td>);
+
       infoColumns.push(column_element);
     });
     return infoColumns;
   }
+
+  // public makeInfoRow() {
+  //   let rowschema = this.props.fieldschema;
+  //   let infoColumns = [<td>{this.mainfile['name']}</td>];
+  //
+  //   Object.keys(rowschema).sort().forEach((key,index) =>{
+  //     let column_element = undefined;
+  //     if(Object.keys(rowschema[key]).length == 0) {
+  //       column_element = (
+  //         <td key={index.toString()}>
+  //           <input data-fieldname={key} onChange={this.textChange} accessKey={key}/>
+  //         </td>);
+  //     }
+  //     else{
+  //       column_element = (
+  //         <td key={index.toString()}>
+  //           <Miniselector
+  //             fieldname={key}
+  //             options={rowschema[key]['value']}
+  //             parentcallback = {this.handleChange}
+  //           />
+  //         </td>);
+  //     }
+  //     infoColumns.push(column_element);
+  //   });
+  //   return infoColumns;
+  // }
 
   public componentDidUpdate(){
     this.props.getFieldData({[this.mainfile['name']]: this.state['FieldObjects']});
