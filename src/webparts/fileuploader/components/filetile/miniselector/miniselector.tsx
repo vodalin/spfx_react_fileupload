@@ -37,6 +37,7 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
     this.unSelected = this.unSelected.bind(this);
     this.isClicked = this.isClicked.bind(this);
     this.txtChanged = this.txtChanged.bind(this);
+    this.plainTextChange = this.plainTextChange.bind(this);
   }
 
   public async hideDiv() {
@@ -81,15 +82,23 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
     this.setState({searchtext: text});
   }
 
-  public txtChanged(event){
-    this.verifyInput(event.target.value);
-  }
-
   public sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve,ms));
   }
 
-  public verifyInput(text){
+  public plainTextChange(event){
+    let input = event.target.value;
+    (input == '') ? this.setState({isValid: false}) : this.setState({isValid: true});
+    let fielddata: IFieldData = {
+      FieldName: this.props.fieldname,
+      Id: undefined,
+      Text: input
+    };
+    this.props.parentcallback(fielddata);
+  }
+
+  public txtChanged(event){
+    let text = event.target.value;
     let inputdata = this.props.options;
     let fielddata: IFieldData = {
       FieldName: this.props.fieldname,
@@ -104,13 +113,11 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
 
     let matchlist = inputdata.filter(item => { return item['Title'].match(re); });
     (matchlist.length === 0) ? this.setState({matches: inputdata}) : this.setState({matches: matchlist});
-    //(matchlist.length === 1 && matchlist[0]['Title']) === text ? this.setState({isValid: true}) : this.setState({isValid: false});
     if(matchlist.length === 1 && matchlist[0]['Title'] === text) {
       this.setState({isValid: true});
       fielddata.Id = matchlist[0]['Id'];
       fielddata.Text = text;
       this.props.parentcallback(fielddata);
-      //this.props.parentcallback({fieldName: this.props.fieldname, Id: itemId, Text: itemText});
     }
     else{
       this.setState({isValid: false});
@@ -171,7 +178,6 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
   }
 
   public render(): React.ReactElement<IMiniSelectProps>{
-    let className = this.cx(this.state['classObj']);
     return (
       <div className={styles.minselect}>
         {this.setInputType()}
@@ -208,7 +214,11 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
     let dataKeyList = Object.keys(this.props.columndata);
     let className = this.cx(this.state['classObj']);
     if(dataKeyList.length == 0){
-      inputElement = (<input></input>);
+      inputElement = (
+        <input
+          onChange={this.plainTextChange}
+          className = {this.state['isValid'] ? styles.isValid : styles.notValid}>
+        </input>);
     }
     else{
       inputElement = (

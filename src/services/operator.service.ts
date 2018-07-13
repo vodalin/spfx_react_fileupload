@@ -93,7 +93,6 @@ export class OperatorService {
 
     return Promise.all(upload_pr_list)
       .then(val => {
-        console.log('start');
         return Promise.resolve(this.spCaller.getSPData(
           this.byTitleSect.replace('%', target_library) + '/items',
           {
