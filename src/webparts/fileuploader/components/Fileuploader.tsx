@@ -71,6 +71,11 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     Promise.resolve(allPr)
       .then(val =>{
         this.setState({runningUpload: false});
+      })
+      .catch(error =>{
+        alert('Upload failed, check console.');
+        console.log(error);
+        this.setState({runningUpload: false});
       });
   }
 

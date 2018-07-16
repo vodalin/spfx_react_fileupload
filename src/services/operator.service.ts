@@ -2,6 +2,7 @@ import {SPAPIhelperService} from './SPAPIhelper.service';
 import {IPropertyPaneDropdownOption} from '@microsoft/sp-webpart-base';
 import {filter} from "minimatch";
 import resolve = Promise.resolve;
+import {obj} from "through2";
 
 export class OperatorService {
   private spCaller: SPAPIhelperService;
@@ -85,9 +86,11 @@ export class OperatorService {
     let upload_pr_list = [];
     let edit_pr_list = [];
     let subfolder_path = target_library + '/' + target_folder;
-    let submit_data_keys = Object.keys(submit_data);
-    Object.keys(submit_data).forEach(filekey => {
-      let raw_file = submit_data[filekey]['raw_file'];
+    let processed_sub_data = stripDictKeys(submit_data);
+
+    let submit_data_keys = Object.keys(processed_sub_data);
+    Object.keys(processed_sub_data).forEach(filekey => {
+      let raw_file = processed_sub_data[filekey]['raw_file'];
       upload_pr_list.push(this.spCaller.uploadFiles(raw_file, subfolder_path));
     });
 
@@ -109,7 +112,7 @@ export class OperatorService {
           let fileName = file['LinkFilename'];
           if(submit_data_keys.indexOf(fileName) > -1){
             let coldata = {};
-            let subdata = submit_data[fileName];
+            let subdata = processed_sub_data[fileName];
             Object.keys(subdata).forEach(key =>{
               if(key != 'raw_file'){
                 let finalvalue = undefined;
@@ -139,4 +142,14 @@ export class OperatorService {
       });
   }
 
+}
+
+function stripDictKeys(input_dict) {
+  Object.keys(input_dict).forEach(key => {
+    let dictData = input_dict[key];
+    let strippedKey = key.replace(/['!&*?=\/|\\":<>]/g,'');
+    delete input_dict[key];
+    input_dict[strippedKey] = dictData;
+  });
+  return input_dict;
 }

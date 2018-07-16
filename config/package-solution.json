@@ -3,7 +3,7 @@
   "solution": {
     "name": "fileuploader-client-side-solution",
     "id": "2d34a029-e91e-4a53-bf69-f050f6a45333",
-    "version": "1.0.0.2",
+    "version": "1.0.0.4",
     "includeClientSideAssets": true
   },
   "paths": {

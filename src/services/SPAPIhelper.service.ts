@@ -27,7 +27,6 @@ export class SPAPIhelperService {
   }
 
   // Functions that interact with API
-  //***
   public getSPData(resourcePath: string, filterObj?: object){
     this.urlSegments = [resourcePath];
     if(filterObj !== undefined){
@@ -36,41 +35,6 @@ export class SPAPIhelperService {
     const callUrl = this.buildUrl(this.urlSegments);
     return this.makeCall(this.cs.getCall(callUrl), 'getSPResource() failed');
   }
-  //***
-  // public getLists(filterObj?: object) {
-  //   this.urlSegments = ['/lists', this.makeQueryString(filterObj)];
-  //   const callUrl = this.buildUrl(this.urlSegments);
-  //   return this.makeCall(this.cs.getCall(callUrl), 'getLists() failed');
-  // }
-  //
-  // public getListItems(listTitle: string, quObj?: object) {
-  //   this.urlSegments = [this.byTitleSect.replace('%', listTitle), '/items'];
-  //   if (quObj !== undefined){
-  //     this.urlSegments.push(this.makeQueryString(quObj));
-  //   }
-  //   const callUrl = this.buildUrl(this.urlSegments);
-  //   return this.makeCall(this.cs.getCall(callUrl), 'getListItems() failed');
-  // }
-  //
-  // public getListColumnNames(parameters: object) {
-  //   this.urlSegments = [this.byTitleSect.replace('%', parameters['listName']), '/Fields'];
-  //   this.urlSegments.push(this.makeQueryString(parameters['filterParams']));
-  //   const callUrl = this.buildUrl(this.urlSegments);
-  //   return this.makeCall(this.cs.getCall(callUrl), 'getListColumnNames() failed');
-  // }
-  //
-  // public addListItem(listTitle: string, itemData: object){
-  //   const itemtype = 'SP.Data.%ListItem'.replace('%', listTitle);
-  //   const opt: ISPHttpClientOptions = {
-  //     headers:{
-  //       'content-type': 'application/json',
-  //     },
-  //     body: JSON.stringify(itemData)
-  //   };
-  //   this.urlSegments = [this.byTitleSect.replace('%', listTitle), '/items'];
-  //   const callUrl = this.buildUrl(this.urlSegments);
-  //   return this.makeCall(this.cs.postCall(callUrl, opt), 'addItem() failed');
-  // }
 
   // Write item ID to a specific column for a file. Assuming target column is a SP picklist.
   public setItemColumn(target_library: string, fileId, coldata: Object, ) {
@@ -88,9 +52,10 @@ export class SPAPIhelperService {
   }
 
   public uploadFiles(raw_file: any, target_folder: string) {
+    let stripped_file_name = raw_file.name.replace(/['!&*?=\/|\\":<>]/g,'');
     this.urlSegments = [
       this.byServerRelSect.replace('%', target_folder),
-      '/files/add(overwrite=true,url=\'' + raw_file.name + '\')'
+      '/files/add(overwrite=true,url=\'' + stripped_file_name + '\')'
     ];
     const callUrl = this.buildUrl(this.urlSegments);
     const digestCache: IDigestCache = this.curContext.serviceScope.consume(DigestCache.serviceKey);
