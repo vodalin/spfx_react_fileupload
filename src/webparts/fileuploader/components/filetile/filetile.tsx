@@ -5,7 +5,7 @@ import {IFieldData} from "../../../../../lib/webparts/fileuploader/components/fi
 
 export interface IFileTileProps {
   file: any;
-  fieldschema: Array<any>;  // {
+  fieldschema: Object;  // {
                             //   Column1: {},
                             //   Column2: {
                             //      value:[{Id: 1, Title: bank1}, {Id: 2, Title: bank2}]

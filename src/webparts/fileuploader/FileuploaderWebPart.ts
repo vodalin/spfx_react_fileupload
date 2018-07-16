@@ -35,7 +35,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   public targetLib: string = undefined;
   public reqFieldMetaData = [];
   public fieldSchema = {};
-  public headerlist = [];
 
   protected onInit(): Promise<void>{
     window['webPartContext'] = this.context;
@@ -62,7 +61,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
             description: this.properties.description,
             target_library: this.targetLib,
             required_fields_schema: this.fieldSchema,
-            header_list: this.headerlist,
           }
         );
         ReactDom.render(element, this.domElement);
@@ -141,12 +139,11 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     });
 
     this.fieldSchema = {};
-    this.headerlist = [];
     selected_fileds.forEach((fieldname: string) =>{
       this.fieldSchema[fieldname] = {header_text: '', field_data: {}};
       this.reqFieldMetaData.forEach(item => {
 
-        if(fieldname == item['InternalName']){
+        if(fieldname == item['InternalName']) {
           this.fieldSchema[fieldname].header_text = item['Title'];
           if(item['@odata.type'] == '#SP.FieldLookup'){
             let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
@@ -156,15 +153,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
               });
           }
         }
-
-        // if(fieldname == item['InternalName'] && item['@odata.type'] == '#SP.FieldLookup'){
-        //   let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
-        //   Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
-        //     .then(results => {
-        //       this.fieldSchema[fieldname] = results;
-        //     });
-        // }
-
 
       });
     });
