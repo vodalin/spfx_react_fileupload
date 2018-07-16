@@ -4,15 +4,15 @@ import { Filetile } from "./filetile/filetile";
 import IFileuploaderProps from "./IFileuploaderProps";
 
 import {OperatorService} from "../../../services/operator.service";
-import {IFieldData} from "../../../../lib/webparts/fileuploader/components/filetile/filetile";
-import {ObjectIterator} from "lodash";
 
-export interface ISubmit_Data{
-  filedata: any;
-  fieldpayload: IFieldData;
+export interface ISubmitData{
+  rawfile: any;
+  columdata: {};
+  isValid: boolean;
 }
 
 export default class RctUploader extends React.Component<IFileuploaderProps, {}> {
+  /* Main entry app. */
   public dropDiv: HTMLElement;
   public os: OperatorService;
   public RootFolder: string;
@@ -23,10 +23,10 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     this.state = {
       filetile_list: [],
       rootfolder: '',
-      submit_data: {},  // {
-                        //  File1.doc: {raw_file:{}, col1:{id:1,Text:"wah"}, col2:{id:undefined,Text:"hah"},
-                        //  File2.csv: {raw_file:{}, col1:{id:42,Text:"some"}, col2:{id:99,Text:"thing"}
-                        // }
+      submit_data: {},    // {
+                          //  File1.doc: {raw_file:{}, col1:{id:1,Text:"wah"}, col2:{id:undefined,Text:"hah"},
+                          //  File2.csv: {raw_file:{}, col1:{id:42,Text:"some"}, col2:{id:99,Text:"thing"}
+                          // }
       runningUpload: false,
     };
     this.os = new OperatorService(window['webPartContext']);
@@ -122,30 +122,7 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     this.setState({'submit_data': sub_data});
   }
 
-  private addFileTile(file){
-    /* Checks the key(filename) of each tile in <state[filetile_list]>
-    *  If a key already exists, then do not add another tile.
-    * */
-    let filename = file['name'];
-    let tile_list = this.state['filetile_list'];
-    let matching_tiles = tile_list.filter(tileObj => {
-      if(tileObj['key'] == filename){ return tileObj; }
-    });
 
-    if(matching_tiles.length == 0){
-      let newTile = (
-        <Filetile
-          key = {filename}
-          file={file}
-          fieldschema={this.props.required_fields_schema}
-          getFieldData={this.getFieldData.bind(this)}
-        />
-      );
-      tile_list.push(newTile);
-
-      this.setState({'filetile_list': tile_list});
-    }
-  }
 
   /************* Template functions *************/
   private getUploaderTemplate() {
@@ -189,6 +166,31 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
     });
     let header_row = (<tr>{headers}</tr>);
     return header_row;
+  }
+
+  private addFileTile(file){
+    /* Checks the key(filename) of each tile in <state[filetile_list]>
+    *  If a key already exists, then do not add another tile.
+    * */
+    let filename = file['name'];
+    let tile_list = this.state['filetile_list'];
+    let matching_tiles = tile_list.filter(tileObj => {
+      if(tileObj['key'] == filename){ return tileObj; }
+    });
+
+    if(matching_tiles.length == 0){
+      let newTile = (
+        <Filetile
+          key = {filename}
+          file={file}
+          fieldschema={this.props.required_fields_schema}
+          getFieldData={this.getFieldData.bind(this)}
+        />
+      );
+      tile_list.push(newTile);
+
+      this.setState({'filetile_list': tile_list});
+    }
   }
 
 }
