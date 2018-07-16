@@ -11,22 +11,12 @@ import * as strings from 'FileuploaderWebPartStrings';
 import Fileuploader from './components/Fileuploader';
 import IFileuploaderProps from './components/IFileuploaderProps';
 
-// export interface IFileuploaderWebPartProps {
-//   description: string;
-//   targetlib: any;
-//   required_fields: any;
-//   target_fields: string;
-// }
-
 export interface IFileuploaderWebPartProps {
   description: string;
   pr_targetlibrary: string;
   pr_addbutton: string;
 }
-
 import {OperatorService} from "../../services/operator.service";
-import {forIn} from "@microsoft/sp-lodash-subset";
-// import {IFileuploaderWebPartProps} from "../../../lib/webparts/fileuploader/FileuploaderWebPart";
 
 
 export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuploaderWebPartProps> {
@@ -45,11 +35,11 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   public targetLib: string = undefined;
   public reqFieldMetaData = [];
   public fieldSchema = {};
+  public headerlist = [];
 
   protected onInit(): Promise<void>{
     window['webPartContext'] = this.context;
     this.ops = new OperatorService(this.context);
-
 
     return super.onInit();
   }
@@ -72,6 +62,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
             description: this.properties.description,
             target_library: this.targetLib,
             required_fields_schema: this.fieldSchema,
+            header_list: this.headerlist,
           }
         );
         ReactDom.render(element, this.domElement);
@@ -109,7 +100,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     };
   }
 
-  //**************** Helper functions ********************
+  /**************** Helper functions ********************/
   private scanProperties(){
     /* Scans the web part properties and updates relevant variables */
     let prArray = [this.getLibraryOptions()];
@@ -142,7 +133,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     /* Check if any 'required fields' are lookup types. If so, then get the lookup table's data (title,Id)
     * and set it in this.fieldSchema.
     */
-    let field_metadata = this.reqFieldMetaData;
     let selected_fileds = [];
     this.getPropKeys().forEach(key => {
       if(key.match(this.fieldKeyRegExp)){
@@ -151,16 +141,31 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     });
 
     this.fieldSchema = {};
+    this.headerlist = [];
     selected_fileds.forEach((fieldname: string) =>{
-      this.fieldSchema[fieldname] = {};
-      field_metadata.forEach(item => {
-        if(fieldname == item['InternalName'] && item['@odata.type'] == '#SP.FieldLookup'){
-          let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
-          Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
-            .then(results => {
-              this.fieldSchema[fieldname] = results;
-            });
+      this.fieldSchema[fieldname] = {header_text: '', field_data: {}};
+      this.reqFieldMetaData.forEach(item => {
+
+        if(fieldname == item['InternalName']){
+          this.fieldSchema[fieldname].header_text = item['Title'];
+          if(item['@odata.type'] == '#SP.FieldLookup'){
+            let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
+            Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
+              .then(results => {
+                this.fieldSchema[fieldname].field_data = results;
+              });
+          }
         }
+
+        // if(fieldname == item['InternalName'] && item['@odata.type'] == '#SP.FieldLookup'){
+        //   let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
+        //   Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
+        //     .then(results => {
+        //       this.fieldSchema[fieldname] = results;
+        //     });
+        // }
+
+
       });
     });
   }
@@ -182,7 +187,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     this.propPaneList = delete_list;
   }
 
-  //**************** Property Pane Element Functions ********************
+  /**************** Property Pane Element Functions ********************/
 
   private createAddButton() {
     /* Creates add field button */
@@ -225,7 +230,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     });
   }
 
-  //**************** Misc stuff ********************
+  /**************** Misc stuff ********************/
   private getReqFieldCount() {
     /*Counts number of web part elements that contain <this.fieldKeyTemplate> in their 'targetProperty' property. */
     let property_list = this.getAllProperties();

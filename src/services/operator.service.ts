@@ -27,7 +27,7 @@ export class OperatorService {
         Select: 'Title'
       })
     ).then(results =>{
-      return this.makeDropOptions(results, 'Title');
+      return this.makeDropOptions(results, 'Title', 'Title');
     }).catch(err => {
       throw new Error('getAllLibraries() failed' + '\n' + err);
     });
@@ -54,18 +54,18 @@ export class OperatorService {
         Top: '2000'
       })
     ).then(results =>{
-      fieldMetaData['dropdownoptions'] = this.makeDropOptions(results, 'InternalName');
+      fieldMetaData['dropdownoptions'] = this.makeDropOptions(results, 'InternalName','Title');
       fieldMetaData['rawdata'] = results;
       return fieldMetaData;
     });
   }
 
-  private makeDropOptions (spDataList: Array<any>, keyselector: string): Array<IPropertyPaneDropdownOption>{
+  private makeDropOptions (optionData: Array<any>, keySelector: string, textSelector: string): Array<IPropertyPaneDropdownOption>{
     const ddOptions: IPropertyPaneDropdownOption[] = [];
-    spDataList['value'].forEach((list) => {
+    optionData['value'].forEach((list) => {
       ddOptions.push({
-        key: list[keyselector],
-        text: list[keyselector]
+        key: list[keySelector],
+        text: list[textSelector]
       });
     });
     return ddOptions;

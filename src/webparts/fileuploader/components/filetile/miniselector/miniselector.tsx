@@ -185,30 +185,6 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
     );
   }
 
-  // public render(): React.ReactElement<IMiniSelectProps>{
-  //   let className = this.cx(this.state['classObj']);
-  //   return (
-  //     <div className={styles.minselect}>
-  //       <div className={styles.restricted_div}>
-  //         <input ref={(elem) => this.textInput = elem}
-  //                onFocus={this.showDiv} onBlur={this.hideDiv}
-  //                onChange={this.txtChanged}
-  //                value={this.state['searchtext']}
-  //                className = {this.state['isValid'] ? styles.isValid : styles.notValid}
-  //         />
-  //         <div ref={(elem) => this.optionDiv = elem} className={className}>
-  //           <table>
-  //             <tbody>
-  //               {this.makeDropDiv()}
-  //             </tbody>
-  //           </table>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-
   private setInputType(){
     let inputElement = undefined;
     let dataKeyList = Object.keys(this.props.columndata);
@@ -239,7 +215,7 @@ export class Miniselector extends React.Component<IMiniSelectProps> {
             </div>
           </div>
         </div>
-      )
+      );
     }
     return inputElement;
   }

@@ -41,13 +41,14 @@ export class Filetile extends React.Component<IFileTileProps> {
     let infoColumns = [<td>{this.mainfile['name']}</td>];
 
     Object.keys(fieldschema).sort().forEach((key,index) =>{
+      let fdata = fieldschema[key]['field_data'];
       let column_element = (
         <td key={index.toString()}>
           <Miniselector
             fieldname={key}
-            options={fieldschema[key]['value']}
+            options={fdata['value']}
             parentcallback = {this.handleChange}
-            columndata={fieldschema[key]}
+            columndata={fdata}
           />
         </td>);
 

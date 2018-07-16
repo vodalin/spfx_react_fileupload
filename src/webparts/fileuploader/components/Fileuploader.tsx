@@ -161,12 +161,25 @@ export default class RctUploader extends React.Component<IFileuploaderProps, {}>
   public makeHeaders() {
     /* Make header labels for main table */
     let headers = [<th>Title</th>];
-    Object.keys(this.props.required_fields_schema).sort().forEach((key,index) => {
-      headers.push(<th key={index.toString()}>{key}</th>);
+    let propSchema = this.props.required_fields_schema;
+
+    Object.keys(propSchema).sort().forEach((key,index) => {
+      let title = propSchema[key]['header_text'];
+      headers.push(<th key={index.toString()}>{title}</th>);
     });
     let header_row = (<tr>{headers}</tr>);
     return header_row;
   }
+
+  // public makeHeaders() {
+  //   /* Make header labels for main table */
+  //   let headers = [<th>Title</th>];
+  //   Object.keys(this.props.required_fields_schema).sort().forEach((key,index) => {
+  //     headers.push(<th key={index.toString()}>{key}</th>);
+  //   });
+  //   let header_row = (<tr>{headers}</tr>);
+  //   return header_row;
+  // }
 
   private addFileTile(file){
     /* Checks the key(filename) of each tile in <state[filetile_list]>
