@@ -131,6 +131,8 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     /* Check if any 'required fields' are lookup types. If so, then get the lookup table's data (title,Id)
     * and set it in this.fieldSchema.
     */
+
+
     let selected_fileds = [];
     this.getPropKeys().forEach(key => {
       if(key.match(this.fieldKeyRegExp)){
@@ -145,12 +147,21 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
 
         if(fieldname == item['InternalName']) {
           this.fieldSchema[fieldname].header_text = item['Title'];
+
           if(item['@odata.type'] == '#SP.FieldLookup'){
             let strippedGUID = item['LookupList'].replace(new RegExp('[{}]','g'), '');
             Promise.resolve(this.ops.getItemsByGUID(strippedGUID))
               .then(results => {
                 this.fieldSchema[fieldname].field_data = results;
               });
+          }
+          else if(item['@odata.type'] == '#SP.FieldChoice'){
+            let choiceList = item['Choices'].map(c => {return {Id: undefined, Title: c}});
+
+            this.fieldSchema[fieldname].field_data = {
+              //value: {Id: item['Choices'], Title: item['Choices']}
+              value: choiceList
+            };
           }
         }
 

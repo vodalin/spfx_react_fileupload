@@ -51,7 +51,7 @@ export class OperatorService {
       this.byTitleSect.replace('%', targetList) + '/Fields',
       {
         Filter: 'Group eq \'Custom Columns\' and Hidden eq false',
-        Select: 'Title,Id,LookupList,InternalName',
+        Select: 'Title,Id,LookupList,InternalName,Choices',
         Top: '2000'
       })
     ).then(results =>{
@@ -153,3 +153,4 @@ function stripDictKeys(input_dict) {
   });
   return input_dict;
 }
+
