@@ -10,19 +10,18 @@ import {
 import * as strings from 'FileuploaderWebPartStrings';
 import Fileuploader from './components/Fileuploader';
 import IFileuploaderProps from './components/IFileuploaderProps';
+import {OperatorService} from "../../services/operator.service";
 
 export interface IFileuploaderWebPartProps {
-  description: string;
   pr_targetlibrary: string;
   pr_addbutton: string;
 }
-import {OperatorService} from "../../services/operator.service";
-
 
 export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuploaderWebPartProps> {
   public ops: OperatorService;
   public fieldKeyTemplate = 'targetField_';
   public fieldKeyRegExp = new RegExp(this.fieldKeyTemplate, 'g');
+  public reqFieldMetaData = [];
 
   // Master list of all property pane elements
   public propPaneList: Array<any> = [];
@@ -33,7 +32,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
 
   // Data passed to child webparts
   public targetLib: string = undefined;
-  public reqFieldMetaData = [];
   public fieldSchema = {};
 
   protected onInit(): Promise<void>{
@@ -58,7 +56,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
         const element: React.ReactElement<IFileuploaderProps> = React.createElement(
           Fileuploader,
           {
-            description: this.properties.description,
             target_library: this.targetLib,
             required_fields_schema: this.fieldSchema,
           }
@@ -131,8 +128,6 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
     /* Check if any 'required fields' are lookup types. If so, then get the lookup table's data (title,Id)
     * and set it in this.fieldSchema.
     */
-
-
     let selected_fileds = [];
     this.getPropKeys().forEach(key => {
       if(key.match(this.fieldKeyRegExp)){
@@ -156,10 +151,8 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
               });
           }
           else if(item['@odata.type'] == '#SP.FieldChoice'){
-            let choiceList = item['Choices'].map(c => {return {Id: undefined, Title: c}});
-
+            let choiceList = item['Choices'].map(c => { return {Id: undefined, Title: c}; });
             this.fieldSchema[fieldname].field_data = {
-              //value: {Id: item['Choices'], Title: item['Choices']}
               value: choiceList
             };
           }
