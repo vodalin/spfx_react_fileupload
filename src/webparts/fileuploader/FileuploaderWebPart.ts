@@ -37,12 +37,13 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   protected onInit(): Promise<void>{
     window['webPartContext'] = this.context;
     this.ops = new OperatorService(this.context);
-
     return super.onInit();
   }
 
   public render(): void {
-    Promise.all(this.scanProperties())
+    /* For each render, scan the webpart's properties, then set/create property pane elements accordingly.
+    * Afterwords, set the <fieldSchema> variable.*/
+    Promise.all(this.initPPaneOptions())
       .then(val => {
         this.plugPaneElement([ this.createLibraryDropDown(), this.createAddButton()]);
         this.getPropKeys().forEach(key => {
@@ -96,27 +97,28 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   }
 
   /**************** Helper functions ********************/
-  private scanProperties(){
-    /* Scans the web part properties and updates relevant variables */
-    let prArray = [this.getLibraryOptions()];
-    this.getPropKeys().forEach(key => {
-      if(key == 'pr_targetlibrary'){
-        this.targetLib = this.properties[key];
-        prArray.push(this.setFieldData());
-      }
-    });
+  private initPPaneOptions(){
+    /* Returns list of promises that create options for the property pane dropdown menus.*/
+    let targetLibName = this.properties['pr_targetlibrary'];
+    let prArray = [this.setLibraryOptions()];
+    if(targetLibName != undefined){
+      this.targetLib = targetLibName;
+      prArray.push(this.setReqFieldData());
+    }
     return prArray;
   }
 
-  private getLibraryOptions() {
+  private setLibraryOptions() {
+    /* Gets names of all document libraries in the site. Then sets options for the "Target Library" dropdown. */
     return Promise.resolve(this.ops.getAllLibraries())
       .then((results: IPropertyPaneDropdownOption[]) => {
         this.libraryOptions = results;
       });
   }
 
-  private setFieldData(){
-    /*Updates the 'required field' info which is used throughout this webpart and its child components */
+  private setReqFieldData(){
+    /* When a target library is defined, this sets the options for all "Required Field" dropdowns
+    <reqFieldOptions> in property pane. Also stores the metadata for each field in <reqFieldMetaData> */
     return Promise.resolve(this.ops.getListFields(this.targetLib))
       .then(fielddata => {
         this.reqFieldOptions = fielddata['dropdownoptions'];
@@ -125,9 +127,8 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   }
 
   private setFieldSchema(): void {
-    /* Check if any 'required fields' are lookup types. If so, then get the lookup table's data (title,Id)
-    * and set it in this.fieldSchema.
-    */
+    /* Compares <reqFieldMetaData> and required fields in webpart properties. Then, populates
+     * <fieldSchema>, which is used to define dropdowns in miniselector component. */
     let selected_fileds = [];
     this.getPropKeys().forEach(key => {
       if(key.match(this.fieldKeyRegExp)){
@@ -163,7 +164,7 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   }
 
   private resetProperties(): void {
-    /* Removes all required fields from the webpart's properties. */
+    /* Removes any required fields from the webpart's properties. */
     this.getPropKeys().map(key => {
       if(key.match(this.fieldKeyRegExp)){
         delete this.properties[key];
@@ -172,14 +173,14 @@ export default class FileuploaderWebPart extends BaseClientSideWebPart<IFileuplo
   }
 
   private resetPropPaneList(): void{
-    /*Removes all 'required field' dropdown elements from <this.propPaneList> */
+    /* Removes 'Required Field' dropdown elements from <propPaneList> */
     const delete_list = this.propPaneList.filter(element =>
       element['targetProperty'].match(this.fieldKeyRegExp) == null
     );
     this.propPaneList = delete_list;
   }
 
-  /**************** Property Pane Element Functions ********************/
+  /**************** Property Pane Generator functions ********************/
 
   private createAddButton() {
     /* Creates add field button */
